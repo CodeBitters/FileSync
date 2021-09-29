@@ -19,7 +19,6 @@ public class DBConnection {
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(0);
         }
-        System.out.println("Opened database successfully");
     }
 
     public Stack<JSONObject> executeSelectQuery(String query) throws SQLException {
@@ -36,6 +35,21 @@ public class DBConnection {
             dataObject.put("updated_at", queryResult.getDate("updated_at").toString());
             dataObject.put("hash", queryResult.getString("hash"));
             dataObject.put("is_active", queryResult.getBoolean("is_active"));
+            dataObject.put("is_altered", queryResult.getBoolean("is_altered"));
+            dataObject.put("is_new", queryResult.getBoolean("is_new"));
+            returnData.push(dataObject);
+        }
+        return returnData;
+    }
+
+    public Stack<JSONObject> executeSelectQueryMinimal(String query) throws SQLException {
+        Statement statement = connection.createStatement();
+        ResultSet queryResult = statement.executeQuery(query);
+        Stack<JSONObject> returnData = new Stack<JSONObject>();
+        while (queryResult.next()) {
+            JSONObject dataObject = new JSONObject();
+            dataObject.put("file_path", queryResult.getString("source_full_path"));
+            dataObject.put("file_hash", queryResult.getString("hash"));
             returnData.push(dataObject);
         }
         return returnData;
@@ -64,5 +78,15 @@ public class DBConnection {
                 "'" + name + "','" + source + "','" + destination + "',datetime(strftime('%s','now'), 'unixepoch', 'localtime'),'" + fileHash + "',1 );";
         Stack<JSONObject> result = this.executeOtherQuery(sqlQuery);
         return result.get(0).get("query_status").equals("1");
+    }
+
+    public Stack<JSONObject> listAllEntries() throws SQLException {
+        String sqlQuery = "select * from file_info order by source_full_path ASC";
+        return this.executeSelectQueryMinimal(sqlQuery);
+    }
+
+    public Stack<JSONObject> listAllEntries(int isActive) throws SQLException {
+        String sqlQuery = "select * from file_info where is_active=" + isActive + " order by source_full_path ASC";
+        return this.executeSelectQueryMinimal(sqlQuery);
     }
 }

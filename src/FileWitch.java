@@ -1,3 +1,5 @@
+import org.json.simple.JSONObject;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -6,6 +8,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,6 +42,32 @@ public class FileWitch {
         }
 
         return sb.toString();
+    }
+
+    public Stack<JSONObject> lookOnFile() {
+        Path start = Paths.get(location);
+        Stack<JSONObject> returnData = new Stack<JSONObject>();
+        try (Stream<Path> stream = Files.walk(start, Integer.MAX_VALUE)) {
+            List<String> pathList = stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .map(String::valueOf)
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            int totalFiles = pathList.size();
+//            System.out.printf("%d total files are there in the directory.\n", totalFiles);
+            System.out.println("Analyzing...");
+            for (String path : pathList) {
+                String hash = createFileHash(path);
+                JSONObject dataObject = new JSONObject();
+                dataObject.put("file_path", path);
+                dataObject.put("file_hash", hash);
+                returnData.push(dataObject);
+            }
+        } catch (IOException | NoSuchAlgorithmException e) {
+            System.out.println(e);
+        }
+        return returnData;
     }
 
     public void scanFile(SocketClient socketClient) {
