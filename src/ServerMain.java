@@ -1,3 +1,5 @@
+import org.json.simple.JSONObject;
+
 import java.sql.SQLException;
 
 public class ServerMain {
@@ -23,7 +25,9 @@ public class ServerMain {
         ClientWorker clientWorker = new ClientWorker();
 //        clientWorker.initiateDatabase(new Environment().getSourcePath());
         try {
-            clientWorker.changesIdentificationEngin();
+            JSONObject result = clientWorker.changesIdentificationEngine();
+            System.out.println(result);
+//            TODO develop file transfer method using sockets
         } catch (SQLException e) {
             e.printStackTrace();
         }

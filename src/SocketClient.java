@@ -3,8 +3,8 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class SocketClient {
-    private String serverIP;
-    private int portNumber;
+    private final String serverIP;
+    private final int portNumber;
     private String dataBuffer;
 
     public SocketClient(String serverIP, int portNumber) {
