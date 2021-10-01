@@ -12,8 +12,8 @@ public class Environment {
         JSONParser parser = new JSONParser();
         this.jsonObject = null;
         try {
-            this.jsonObject = (JSONObject) parser.parse(new FileReader("D://Works//FileSync//environment.json"));
-        } catch (IOException | ParseException e) {
+            this.jsonObject = (JSONObject) parser.parse(new FileReader("D:/Works/FileSync/environment.json"));
+        } catch (ParseException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -26,5 +26,25 @@ public class Environment {
     public String getDestinationPath() {
         JSONObject path = (JSONObject) jsonObject.get("PATH");
         return (String) path.get("DESTINATION_PATH");
+    }
+
+    public int getDataMTU() {
+        JSONObject path = (JSONObject) jsonObject.get("PARAMETERS");
+        return Integer.parseInt((String) path.get("DATA_MTU"));
+    }
+
+    public int getFileTransferPort() {
+        JSONObject path = (JSONObject) jsonObject.get("COMMUNICATION_POSTS");
+        return Integer.parseInt((String) path.get("FILE_TRANSFER_POST"));
+    }
+
+    public String getMasterServerAddress() {
+        JSONObject path = (JSONObject) jsonObject.get("SERVER_ADDRESSES");
+        return (String) path.get("MASTER_SERVER_ADDRESS");
+    }
+
+    public String getBackupServerAddress() {
+        JSONObject path = (JSONObject) jsonObject.get("SERVER_ADDRESSES");
+        return (String) path.get("BACKUP_SERVER_ADDRESS");
     }
 }

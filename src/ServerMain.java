@@ -1,6 +1,4 @@
-import org.json.simple.JSONObject;
-
-import java.sql.SQLException;
+import java.io.IOException;
 
 public class ServerMain {
     public static void main(String[] args) {
@@ -12,8 +10,8 @@ public class ServerMain {
 //        }
 //        TODO initially create file list in database
 //        TODO identify changes
-        DBConnection dbConnection = new DBConnection();
-        dbConnection.connect();
+//        DBConnection dbConnection = new DBConnection();
+//        dbConnection.connect();
 //        try {
 //            Object r = dbConnection.insertDataEntry("hunny","hello/3","hello/2","23232");
 //            System.out.println(r);
@@ -22,13 +20,19 @@ public class ServerMain {
 //        } catch (SQLException e) {
 //            e.printStackTrace();
 //        }
-        ClientWorker clientWorker = new ClientWorker();
+//        ClientWorker clientWorker = new ClientWorker();
 //        clientWorker.initiateDatabase(new Environment().getSourcePath());
+//        try {
+//            JSONObject result = clientWorker.changesIdentificationEngine();
+//            System.out.println(result);
+////            TODO develop file transfer method using sockets
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+        FileSenderServer fileSenderServer = new FileSenderServer();
         try {
-            JSONObject result = clientWorker.changesIdentificationEngine();
-            System.out.println(result);
-//            TODO develop file transfer method using sockets
-        } catch (SQLException e) {
+            fileSenderServer.sendFile("D:\\Works\\cubclust min.pdf");
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
