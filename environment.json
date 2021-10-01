@@ -4,5 +4,15 @@
     "SOURCE_PATH": "D:\\Works\\",
     "DESTINATION_PATH": "D:\\Demo",
     "TRASH_PATH": ""
+  },
+  "PARAMETERS": {
+    "DATA_MTU": "6022386"
+  },
+  "COMMUNICATION_POSTS": {
+    "FILE_TRANSFER_POST": "234"
+  },
+  "SERVER_ADDRESSES": {
+    "MASTER_SERVER_ADDRESS": "localhost",
+    "BACKUP_SERVER_ADDRESS": "localhost"
   }
 }
