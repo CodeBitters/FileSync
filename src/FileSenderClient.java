@@ -1,3 +1,5 @@
+import org.json.JSONException;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,7 +10,7 @@ public class FileSenderClient {
     private final String fileServerAddress;
     private final int fileSize;
 
-    public FileSenderClient() {
+    public FileSenderClient() throws JSONException {
         fileSize = new Environment().getDataMTU();
         fileServerPort = new Environment().getFileTransferPort();
         fileServerAddress = new Environment().getMasterServerAddress();

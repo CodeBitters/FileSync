@@ -3,6 +3,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class SocketServer {
+    public static String dataClientReceivedMessage = "{operation_code:'none'}";
     private final int portNumber;
 
     public SocketServer(int portNumber) {
@@ -20,7 +21,7 @@ public class SocketServer {
         String temp = "";
         while (!temp.equals("EOR")) {
             temp = dataIn.readUTF();
-            System.out.println("Server out: " + temp);
+            dataClientReceivedMessage = temp;
         }
 
     }

@@ -3,14 +3,13 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class SocketClient {
+    public static String dataBuffer = "{operation_code:'none'}";
     private final String serverIP;
     private final int portNumber;
-    private String dataBuffer;
 
     public SocketClient(String serverIP, int portNumber) {
         this.serverIP = serverIP;
         this.portNumber = portNumber;
-        this.dataBuffer = "Server starting...";
     }
 
     public void setupClient() throws IOException {
@@ -21,7 +20,7 @@ public class SocketClient {
         String temp = "";
         String oldTemp = "";
         while (!temp.equals("EOR")) {
-            temp = this.dataBuffer;
+            temp = dataBuffer;
             if (oldTemp.equals(temp)) {
                 System.out.print("");
             } else {
@@ -33,6 +32,6 @@ public class SocketClient {
     }
 
     public void setDataBuffer(String dataBuffer) {
-        this.dataBuffer = dataBuffer;
+        SocketClient.dataBuffer = dataBuffer;
     }
 }

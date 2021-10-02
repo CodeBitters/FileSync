@@ -1,4 +1,5 @@
-import org.json.simple.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -64,7 +65,7 @@ public class FileWitch {
                 dataObject.put("file_hash", hash);
                 returnData.push(dataObject);
             }
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (IOException | NoSuchAlgorithmException | JSONException e) {
             System.out.println(e);
         }
         return returnData;

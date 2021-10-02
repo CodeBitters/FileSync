@@ -1,14 +1,17 @@
-import org.json.simple.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
-public class ClientWorker {
+public class Worker {
 
-    public void initiateDatabase(String file_path) {
+    public void initiateDatabase(String file_path) throws JSONException {
         System.out.println("File Witcher is starting...");
         System.out.println("Search on " + file_path);
         FileWitch fileWitch = new FileWitch(file_path);
@@ -25,7 +28,7 @@ public class ClientWorker {
         System.out.println("Database building completed.");
     }
 
-    public JSONObject changesIdentificationEngine() throws SQLException {
+    public JSONObject changesIdentificationEngine() throws SQLException, JSONException {
 //        get database entries
         DBConnection dbConnection = new DBConnection();
         dbConnection.connect();
@@ -101,11 +104,90 @@ public class ClientWorker {
 
 //        create return object
         JSONObject returnObject = new JSONObject();
+//        add operation_code
+        returnObject.put("operation_code", "change list");
         returnObject.put("newly_created_files", newlyCreatedFiles);
         returnObject.put("updated_files", updatedFileList);
         returnObject.put("deleted_files", pastVersionList);
         returnObject.put("moved_files", movedFileList);
 
         return returnObject;
+    }
+
+    public void getFileFromMaster(JSONObject changeList) throws IOException, JSONException {
+//        start file server
+        JSONArray newFiles = (JSONArray) changeList.get("newly_created_files");
+        JSONArray toUpdateFiles = (JSONArray) changeList.get("updated_files");
+
+        FileOperation fileOperation = new FileOperation();
+
+        for (int i = 0; i < newFiles.length(); i++) {
+            FileSenderClient fileSenderClient = new FileSenderClient();
+            JSONObject file = (JSONObject) newFiles.get(i);
+            fileSenderClient.receiveFile(fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString()));
+//            String name=new Environment().getDestinationPath()+Integer.toString(new Random().nextInt(10000000))+".file";
+//            fileSenderClient.receiveFile(name);
+        }
+
+        for (int i = 0; i < toUpdateFiles.length(); i++) {
+            FileSenderClient fileSenderClient = new FileSenderClient();
+            JSONObject file = (JSONObject) toUpdateFiles.get(i);
+            fileSenderClient.receiveFile(fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString()));
+//            String name=new Environment().getDestinationPath()+Integer.toString((int) Math.random())+".file";
+//            fileSenderClient.receiveFile(name);
+        }
+
+    }
+
+    public void sendFileFromMaster(JSONObject changeList) throws IOException, JSONException {
+//        start file server
+        JSONArray newFiles = (JSONArray) changeList.get("newly_created_files");
+        JSONArray toUpdateFiles = (JSONArray) changeList.get("updated_files");
+
+        FileOperation fileOperation = new FileOperation();
+
+        for (int i = 0; i < newFiles.length(); i++) {
+            FileSenderServer fileSenderClient = new FileSenderServer();
+            JSONObject file = (JSONObject) newFiles.get(i);
+            System.out.println(file.get("file_path"));
+            fileSenderClient.sendFile(file.get("file_path").toString());
+        }
+
+        for (int i = 0; i < toUpdateFiles.length(); i++) {
+            FileSenderServer fileSenderClient = new FileSenderServer();
+            JSONObject file = (JSONObject) toUpdateFiles.get(i);
+            System.out.println(file.get("file_path"));
+            fileSenderClient.sendFile(file.get("file_path").toString());
+        }
+
+    }
+
+    public void fileListAnalyzer(JSONObject changeList) throws IOException, JSONException {
+//        TODO foreach loop not work hence change as above
+        List<JSONObject> filesToCreate = (List<JSONObject>) changeList.get("newly_created_files");
+        List<JSONObject> filesToUpdate = (List<JSONObject>) changeList.get("updated_files");
+        List<JSONObject> filesToDelete = (List<JSONObject>) changeList.get("deleted_files");
+        List<JSONObject> filesToMove = (List<JSONObject>) changeList.get("moved_files");
+
+        List<JSONObject> createFiles = null;
+        List<JSONObject> updatedFiles = null;
+        List<JSONObject> deletedFiles = null;
+        List<JSONObject> movedFiles = null;
+
+//        preform delete operation
+        FileOperation fileOperation = new FileOperation();
+        for (JSONObject file : filesToDelete) {
+            boolean isDeleted = fileOperation.moveFile(fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString()), new Environment().getTrashPath());
+            if (isDeleted)
+                deletedFiles.add(file);
+        }
+
+//        move files
+        for (JSONObject file : filesToMove) {
+            boolean isMoved = fileOperation.moveFile(fileOperation.filePathUpdateToBackupPath(file.get("old_path").toString()), fileOperation.filePathUpdateToBackupPath(file.get("new_path").toString()));
+            if (isMoved)
+                movedFiles.add(file);
+        }
+
     }
 }

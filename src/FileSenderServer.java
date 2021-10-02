@@ -1,3 +1,5 @@
+import org.json.JSONException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,11 +11,11 @@ public class FileSenderServer {
 
     private final int fileServerPort;
 
-    public FileSenderServer() {
+    public FileSenderServer() throws JSONException {
         fileServerPort = new Environment().getFileTransferPort();
     }
 
-    public void sendFile(String filePath) throws IOException {
+    public void sendFile(String filePath) {
         System.out.println("Waiting...");
         try {
             ServerSocket serverSocket = new ServerSocket(fileServerPort);
