@@ -1,3 +1,5 @@
+import org.json.JSONException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,11 +11,11 @@ public class FileSenderServer {
 
     private final int fileServerPort;
 
-    public FileSenderServer() {
+    public FileSenderServer() throws JSONException {
         fileServerPort = new Environment().getFileTransferPort();
     }
 
-    public void sendFile(String filePath) throws IOException {
+    public void sendFile(String filePath) {
         System.out.println("Waiting...");
         try {
             ServerSocket serverSocket = new ServerSocket(fileServerPort);
@@ -31,14 +33,13 @@ public class FileSenderServer {
             outputStream.write(dataBuffer, 0, dataBuffer.length);
             outputStream.flush();
 
-            System.out.printf("File (%s) transferring completed.", filePath);
-
-//            dataBuffer.length provide file size in bytes
+            System.out.printf("File (%s) transferring completed.\n", filePath);
 
             outputStream.close();
             fileInputStream.close();
             serverSocket.close();
             socket.close();
+
         } catch (IOException e) {
             e.printStackTrace();
         }

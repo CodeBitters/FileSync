@@ -2,14 +2,17 @@
   "VERSION": 1.0,
   "PATH": {
     "SOURCE_PATH": "D:\\Works\\",
-    "DESTINATION_PATH": "D:\\Demo",
-    "TRASH_PATH": ""
+    "DESTINATION_PATH": "D:\\Desktop Files\\Demo\\",
+    "TRASH_PATH": "D:\\Demo\\temp\\",
+    "TEMPORARY_DESTINATION_PATH": "D:\\Desktop Files\\Demo\\temp\\"
   },
   "PARAMETERS": {
-    "DATA_MTU": "6022386"
+    "DATA_MTU": "1073741824"
   },
   "COMMUNICATION_POSTS": {
-    "FILE_TRANSFER_POST": "234"
+    "FILE_TRANSFER_POST": "234",
+    "MASTER_TO_BACKUP_COMMUNICATION_POST": "112",
+    "BACKUP_TO_MASTER_COMMUNICATION_POST": "113"
   },
   "SERVER_ADDRESSES": {
     "MASTER_SERVER_ADDRESS": "localhost",

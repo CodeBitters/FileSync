@@ -1,38 +1,56 @@
-import java.io.IOException;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-public class ServerMain {
+import java.io.IOException;
+import java.sql.SQLException;
+
+//Master server side
+
+public class ServerMain extends Thread {
+    private static String dataBuffer = "{operation_code:'none'}";
+    private static String dataBufferMature = "{operation_code:'none'}";
+
     public static void main(String[] args) {
-//        try {
-//            SocketServer socketServer = new SocketServer(155);
-//            socketServer.establishServer();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        TODO initially create file list in database
-//        TODO identify changes
-//        DBConnection dbConnection = new DBConnection();
-//        dbConnection.connect();
-//        try {
-//            Object r = dbConnection.insertDataEntry("hunny","hello/3","hello/2","23232");
-//            System.out.println(r);
-//            Stack<JSONObject> data = dbConnection.executeSelectQuery("select * from file_info");
-//            System.out.println(data);
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//        ClientWorker clientWorker = new ClientWorker();
-//        clientWorker.initiateDatabase(new Environment().getSourcePath());
-//        try {
-//            JSONObject result = clientWorker.changesIdentificationEngine();
-//            System.out.println(result);
-////            TODO develop file transfer method using sockets
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-        FileSenderServer fileSenderServer = new FileSenderServer();
+
+//        run thread in main method
+        ServerMain serverMain = new ServerMain();
+        serverMain.start();
+
+        DBConnection dbConnection = new DBConnection();
+        dbConnection.connect();
         try {
-            fileSenderServer.sendFile("D:\\Works\\cubclust min.pdf");
-        } catch (IOException e) {
+            boolean isDatabaseExist = dbConnection.setupDatabase();
+            Worker worker = new Worker();
+            if (!isDatabaseExist) {
+//                create database
+                worker.initiateDatabase(new Environment().getSourcePath());
+            } else {
+//                check changes
+                JSONObject fileChanges = worker.changesIdentificationEngine();
+                System.out.println(fileChanges);
+                SocketClient.dataBuffer = fileChanges.toString();
+//                start file server to send data
+                worker.sendFileFromMaster(fileChanges);
+            }
+        } catch (SQLException | IOException | JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        SocketClient socketClient = null;
+        try {
+            socketClient = new SocketClient(new Environment().getBackupServerAddress(), new Environment().getCommunicationPortBackupToMaster());
+
+            while (true) {
+                dataBuffer = SocketClient.dataBuffer;
+                if (!dataBuffer.equals(dataBufferMature)) {
+                    dataBufferMature = dataBuffer;
+                    socketClient.setupClient();
+                }
+            }
+
+        } catch (JSONException | IOException e) {
             e.printStackTrace();
         }
     }

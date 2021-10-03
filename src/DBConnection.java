@@ -1,4 +1,5 @@
-import org.json.simple.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.sql.*;
 import java.util.Stack;
@@ -21,7 +22,26 @@ public class DBConnection {
         }
     }
 
-    public Stack<JSONObject> executeSelectQuery(String query) throws SQLException {
+    public boolean setupDatabase() throws SQLException {
+        String query = "create table if not exists file_info(" +
+                "    file_id               integer" +
+                "    primary key           autoincrement," +
+                "    file_name             varchar(200)," +
+                "    source_full_path      varchar(500)," +
+                "    destination_full_path varchar(500)," +
+                "    updated_at            timestamp," +
+                "    hash                  varchar(200)," +
+                "    is_active             integer default 1," +
+                "    is_altered            integer default 0," +
+                "    is_new                int     default 1" +
+                ");";
+        Statement statement = connection.createStatement();
+        statement.execute(query);
+        int entryCount = statement.executeQuery("select count(file_id) as count from file_info;").getInt("count");
+        return entryCount > 0;
+    }
+
+    public Stack<JSONObject> executeSelectQuery(String query) throws SQLException, JSONException {
         Statement statement = connection.createStatement();
         ResultSet queryResult = statement.executeQuery(query);
         Stack<JSONObject> returnData = new Stack<JSONObject>();
@@ -42,7 +62,7 @@ public class DBConnection {
         return returnData;
     }
 
-    public Stack<JSONObject> executeSelectQueryMinimal(String query) throws SQLException {
+    public Stack<JSONObject> executeSelectQueryMinimal(String query) throws SQLException, JSONException {
         Statement statement = connection.createStatement();
         ResultSet queryResult = statement.executeQuery(query);
         Stack<JSONObject> returnData = new Stack<JSONObject>();
@@ -55,7 +75,7 @@ public class DBConnection {
         return returnData;
     }
 
-    public Stack<JSONObject> executeOtherQuery(String query) {
+    public Stack<JSONObject> executeOtherQuery(String query) throws JSONException {
         Statement statement;
         JSONObject dataObject = new JSONObject();
         dataObject.put("is_select", false);
@@ -63,7 +83,7 @@ public class DBConnection {
             statement = connection.createStatement();
             statement.execute(query);
             dataObject.put("query_status", "1");
-        } catch (SQLException e) {
+        } catch (SQLException | JSONException e) {
             e.printStackTrace();
             dataObject.put("query_status", "0");
         }
@@ -73,19 +93,19 @@ public class DBConnection {
         return returnData;
     }
 
-    public Object insertDataEntry(String name, String source, String destination, String fileHash) {
+    public Object insertDataEntry(String name, String source, String destination, String fileHash) throws JSONException {
         String sqlQuery = "insert into file_info (file_name, source_full_path, destination_full_path, updated_at, hash, is_active) values (" +
                 "'" + name + "','" + source + "','" + destination + "',datetime(strftime('%s','now'), 'unixepoch', 'localtime'),'" + fileHash + "',1 );";
         Stack<JSONObject> result = this.executeOtherQuery(sqlQuery);
         return result.get(0).get("query_status").equals("1");
     }
 
-    public Stack<JSONObject> listAllEntries() throws SQLException {
+    public Stack<JSONObject> listAllEntries() throws SQLException, JSONException {
         String sqlQuery = "select * from file_info order by source_full_path ASC";
         return this.executeSelectQueryMinimal(sqlQuery);
     }
 
-    public Stack<JSONObject> listAllEntries(int isActive) throws SQLException {
+    public Stack<JSONObject> listAllEntries(int isActive) throws SQLException, JSONException {
         String sqlQuery = "select * from file_info where is_active=" + isActive + " order by source_full_path ASC";
         return this.executeSelectQueryMinimal(sqlQuery);
     }
