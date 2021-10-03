@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class Environment {
+    public static int maximumFileSize = 0;
     private JSONObject jsonObject;
 
     public Environment() {
@@ -41,7 +42,11 @@ public class Environment {
 
     public int getDataMTU() throws JSONException {
         JSONObject path = (JSONObject) jsonObject.get("PARAMETERS");
-        return Integer.parseInt((String) path.get("DATA_MTU"));
+        if (maximumFileSize == 0)
+            return Integer.parseInt((String) path.get("DATA_MTU"));
+        else
+            return maximumFileSize;
+
     }
 
     public int getFileTransferPort() throws JSONException {

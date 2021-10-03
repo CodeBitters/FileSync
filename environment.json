@@ -7,7 +7,7 @@
     "TEMPORARY_DESTINATION_PATH": "D:\\Desktop Files\\Demo\\temp\\"
   },
   "PARAMETERS": {
-    "DATA_MTU": "6022386"
+    "DATA_MTU": "1073741824"
   },
   "COMMUNICATION_POSTS": {
     "FILE_TRANSFER_POST": "234",

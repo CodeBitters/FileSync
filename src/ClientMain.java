@@ -51,6 +51,7 @@ public class ClientMain extends Thread {
                         case "change list":
 //                            analyze change list and check for operations
                             new Worker().getFileFromMaster(jsonObject);
+//                            TODO perform delete and move operation
                             break;
                     }
 

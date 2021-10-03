@@ -3,6 +3,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +31,7 @@ public class Worker {
         System.out.println("Database building completed.");
     }
 
-    public JSONObject changesIdentificationEngine() throws SQLException, JSONException {
+    public JSONObject changesIdentificationEngine() throws SQLException, JSONException, IOException {
 //        get database entries
         DBConnection dbConnection = new DBConnection();
         dbConnection.connect();
@@ -40,8 +43,15 @@ public class Worker {
         List<JSONObject> newlyCreatedFiles = new ArrayList<>(newVersionList);
         List<JSONObject> updatedFileList = new ArrayList<>();
 
+        int maxFileSize = 0;
         int arrayPositionOuter = 0;
         for (JSONObject formFile : newVersionList) {
+//            get maximum file size
+            Path path = Paths.get((String) formFile.get("file_path"));
+            int fileSize = (int) Files.size(path);
+            if (fileSize > maxFileSize)
+                maxFileSize = fileSize;
+
             int arrayPositionInner = 0;
             for (JSONObject fromDB : pastVersionList) {
                 if (formFile.get("file_path").equals(fromDB.get("file_path"))) {
@@ -65,7 +75,6 @@ public class Worker {
         System.out.println("Basic file analysis completed.");
 
 //        check deleted and new file list to identify file moves
-
         List<JSONObject> movedFileList = new ArrayList<>();
         List<JSONObject> pastVersionListForLoop = new ArrayList<>(pastVersionList);
         int outerIndex = 0;
@@ -106,6 +115,7 @@ public class Worker {
         JSONObject returnObject = new JSONObject();
 //        add operation_code
         returnObject.put("operation_code", "change list");
+        returnObject.put("maximum_file_size", maxFileSize);
         returnObject.put("newly_created_files", newlyCreatedFiles);
         returnObject.put("updated_files", updatedFileList);
         returnObject.put("deleted_files", pastVersionList);
@@ -118,25 +128,30 @@ public class Worker {
 //        start file server
         JSONArray newFiles = (JSONArray) changeList.get("newly_created_files");
         JSONArray toUpdateFiles = (JSONArray) changeList.get("updated_files");
-
+        int maximumFileSize = changeList.getInt("maximum_file_size");
+        Environment.maximumFileSize = maximumFileSize;
         FileOperation fileOperation = new FileOperation();
 
         for (int i = 0; i < newFiles.length(); i++) {
             FileSenderClient fileSenderClient = new FileSenderClient();
             JSONObject file = (JSONObject) newFiles.get(i);
-            fileSenderClient.receiveFile(fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString()));
-//            String name=new Environment().getDestinationPath()+Integer.toString(new Random().nextInt(10000000))+".file";
-//            fileSenderClient.receiveFile(name);
+            String filePath = fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString());
+//            call function to get the file
+            fileSenderClient.receiveFile(filePath);
         }
+
 
         for (int i = 0; i < toUpdateFiles.length(); i++) {
             FileSenderClient fileSenderClient = new FileSenderClient();
             JSONObject file = (JSONObject) toUpdateFiles.get(i);
-            fileSenderClient.receiveFile(fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString()));
-//            String name=new Environment().getDestinationPath()+Integer.toString((int) Math.random())+".file";
-//            fileSenderClient.receiveFile(name);
+            String filePath = fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString());
+//            delete existing file to write new file
+            new FileOperation().deleteFile(filePath);
+//            call function to get the file
+            fileSenderClient.receiveFile(filePath);
         }
 
+        System.out.println("File download form master to backup is completed.");
     }
 
     public void sendFileFromMaster(JSONObject changeList) throws IOException, JSONException {
@@ -144,22 +159,18 @@ public class Worker {
         JSONArray newFiles = (JSONArray) changeList.get("newly_created_files");
         JSONArray toUpdateFiles = (JSONArray) changeList.get("updated_files");
 
-        FileOperation fileOperation = new FileOperation();
-
         for (int i = 0; i < newFiles.length(); i++) {
             FileSenderServer fileSenderClient = new FileSenderServer();
             JSONObject file = (JSONObject) newFiles.get(i);
-            System.out.println(file.get("file_path"));
             fileSenderClient.sendFile(file.get("file_path").toString());
         }
 
         for (int i = 0; i < toUpdateFiles.length(); i++) {
             FileSenderServer fileSenderClient = new FileSenderServer();
             JSONObject file = (JSONObject) toUpdateFiles.get(i);
-            System.out.println(file.get("file_path"));
             fileSenderClient.sendFile(file.get("file_path").toString());
         }
-
+        System.out.println("File upload to backup form master is completed.");
     }
 
     public void fileListAnalyzer(JSONObject changeList) throws IOException, JSONException {

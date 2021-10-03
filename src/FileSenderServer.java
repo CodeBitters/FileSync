@@ -33,14 +33,13 @@ public class FileSenderServer {
             outputStream.write(dataBuffer, 0, dataBuffer.length);
             outputStream.flush();
 
-            System.out.printf("File (%s) transferring completed.", filePath);
-
-//            dataBuffer.length provide file size in bytes
+            System.out.printf("File (%s) transferring completed.\n", filePath);
 
             outputStream.close();
             fileInputStream.close();
             serverSocket.close();
             socket.close();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
