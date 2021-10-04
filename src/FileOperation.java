@@ -11,6 +11,10 @@ public class FileOperation {
         return sourcePath.replace(new Environment().getSourcePath(), new Environment().getDestinationPath());
     }
 
+    public String filePathUpdateToTrashPath(String currentPath) throws JSONException {
+        return currentPath.replace(new Environment().getDestinationPath(), new Environment().getTrashPath());
+    }
+
     public boolean moveFile(String source, String destination) throws IOException {
         if (Files.exists(Paths.get(source))) {
             Path path = Files.move(Paths.get(source), Paths.get(destination));

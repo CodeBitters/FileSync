@@ -2,6 +2,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +15,7 @@ import java.util.regex.Pattern;
 
 public class Worker {
 
-    public void initiateDatabase(String file_path) throws JSONException {
+    public void initiateDatabase(String file_path) throws JSONException, SQLException {
         System.out.println("File Witcher is starting...");
         System.out.println("Search on " + file_path);
         FileWitch fileWitch = new FileWitch(file_path);
@@ -28,6 +29,7 @@ public class Worker {
             String[] splitArray = path.split(Pattern.quote("\\"));
             dbConnection.insertDataEntry(splitArray[splitArray.length - 1], path, "", jsonObject.get("file_hash").toString());
         }
+        dbConnection.closeConnection();
         System.out.println("Database building completed.");
     }
 
@@ -43,7 +45,7 @@ public class Worker {
         List<JSONObject> newlyCreatedFiles = new ArrayList<>(newVersionList);
         List<JSONObject> updatedFileList = new ArrayList<>();
 
-        int maxFileSize = 0;
+        double maxFileSize = 0.0;
         int arrayPositionOuter = 0;
         for (JSONObject formFile : newVersionList) {
 //            get maximum file size
@@ -111,16 +113,18 @@ public class Worker {
         movedFileList contains moved files
          */
 
+//        maximum file size adjustment
+        maxFileSize = Math.ceil(maxFileSize / 1024.0) * 1024;
+
 //        create return object
         JSONObject returnObject = new JSONObject();
-//        add operation_code
-        returnObject.put("operation_code", "change list");
         returnObject.put("maximum_file_size", maxFileSize);
         returnObject.put("newly_created_files", newlyCreatedFiles);
         returnObject.put("updated_files", updatedFileList);
         returnObject.put("deleted_files", pastVersionList);
         returnObject.put("moved_files", movedFileList);
 
+        dbConnection.closeConnection();
         return returnObject;
     }
 
@@ -128,8 +132,7 @@ public class Worker {
 //        start file server
         JSONArray newFiles = (JSONArray) changeList.get("newly_created_files");
         JSONArray toUpdateFiles = (JSONArray) changeList.get("updated_files");
-        int maximumFileSize = changeList.getInt("maximum_file_size");
-        Environment.maximumFileSize = maximumFileSize;
+        Environment.maximumFileSize = changeList.getInt("maximum_file_size");
         FileOperation fileOperation = new FileOperation();
 
         for (int i = 0; i < newFiles.length(); i++) {
@@ -173,32 +176,39 @@ public class Worker {
         System.out.println("File upload to backup form master is completed.");
     }
 
-    public void fileListAnalyzer(JSONObject changeList) throws IOException, JSONException {
-//        TODO foreach loop not work hence change as above
-        List<JSONObject> filesToCreate = (List<JSONObject>) changeList.get("newly_created_files");
-        List<JSONObject> filesToUpdate = (List<JSONObject>) changeList.get("updated_files");
-        List<JSONObject> filesToDelete = (List<JSONObject>) changeList.get("deleted_files");
-        List<JSONObject> filesToMove = (List<JSONObject>) changeList.get("moved_files");
+    public void moveAndDeleteOperation(JSONObject changeList) throws IOException, JSONException {
+        JSONArray filesToDelete = (JSONArray) changeList.get("deleted_files");
+        JSONArray filesToMove = (JSONArray) changeList.get("moved_files");
 
-        List<JSONObject> createFiles = null;
-        List<JSONObject> updatedFiles = null;
-        List<JSONObject> deletedFiles = null;
-        List<JSONObject> movedFiles = null;
+        List<JSONObject> deletedFiles = new ArrayList<>();
+        List<JSONObject> movedFiles = new ArrayList<>();
+
+        FileOperation fileOperation = new FileOperation();
 
 //        preform delete operation
-        FileOperation fileOperation = new FileOperation();
-        for (JSONObject file : filesToDelete) {
-            boolean isDeleted = fileOperation.moveFile(fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString()), new Environment().getTrashPath());
+//        TODO create new folder with timestamp and add all deletion into it
+        for (int i = 0; i < filesToDelete.length(); i++) {
+            JSONObject file = (JSONObject) filesToDelete.get(i);
+//            generate paths
+            String sourcePath = fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString());
+            String destinationPath = fileOperation.filePathUpdateToTrashPath(sourcePath);
+//            create directory structure
+            new File(destinationPath).getParentFile().mkdirs();
+//            perform move to trash
+            boolean isDeleted = fileOperation.moveFile(sourcePath, destinationPath);
             if (isDeleted)
                 deletedFiles.add(file);
         }
 
-//        move files
-        for (JSONObject file : filesToMove) {
+//        preform move operation
+        for (int i = 0; i < filesToMove.length(); i++) {
+            JSONObject file = (JSONObject) filesToMove.get(i);
             boolean isMoved = fileOperation.moveFile(fileOperation.filePathUpdateToBackupPath(file.get("old_path").toString()), fileOperation.filePathUpdateToBackupPath(file.get("new_path").toString()));
             if (isMoved)
                 movedFiles.add(file);
         }
 
+        System.out.printf("After: %s\nBefore: %s\n\n", deletedFiles, filesToDelete);
+        System.out.printf("After: %s\nBefore: %s", movedFiles, filesToMove);
     }
 }

@@ -47,11 +47,17 @@ public class ClientMain extends Thread {
                 serverReadingMature = serverReading;
                 try {
                     JSONObject jsonObject = new JSONObject(serverReadingMature);
+                    Worker worker = new Worker();
                     switch (jsonObject.get("operation_code").toString()) {
                         case "change list":
 //                            analyze change list and check for operations
-                            new Worker().getFileFromMaster(jsonObject);
-//                            TODO perform delete and move operation
+                            worker.getFileFromMaster(jsonObject);
+//                            perform delete and move operation
+                            worker.moveAndDeleteOperation(jsonObject);
+                            break;
+                        case "reinstate database":
+//                            save files came from master
+                            worker.getFileFromMaster(jsonObject);
                             break;
                     }
 
