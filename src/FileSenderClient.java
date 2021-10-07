@@ -30,8 +30,6 @@ public class FileSenderClient {
             File file = new File(fileDestination);
             file.getParentFile().mkdirs();
 
-//            file.createNewFile();
-
             FileOutputStream fileOutputStream = new FileOutputStream(fileDestination);
 
             int bytesRead;

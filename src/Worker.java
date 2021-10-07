@@ -8,9 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class Worker {
@@ -124,11 +123,13 @@ public class Worker {
         returnObject.put("deleted_files", pastVersionList);
         returnObject.put("moved_files", movedFileList);
 
+//        TODO add file changes to te database
+
         dbConnection.closeConnection();
         return returnObject;
     }
 
-    public void getFileFromMaster(JSONObject changeList) throws IOException, JSONException {
+    public boolean getFileFromMaster(JSONObject changeList) throws IOException, JSONException {
 //        start file server
         JSONArray newFiles = (JSONArray) changeList.get("newly_created_files");
         JSONArray toUpdateFiles = (JSONArray) changeList.get("updated_files");
@@ -155,6 +156,7 @@ public class Worker {
         }
 
         System.out.println("File download form master to backup is completed.");
+        return true;
     }
 
     public void sendFileFromMaster(JSONObject changeList) throws IOException, JSONException {
@@ -176,7 +178,7 @@ public class Worker {
         System.out.println("File upload to backup form master is completed.");
     }
 
-    public void moveAndDeleteOperation(JSONObject changeList) throws IOException, JSONException {
+    public boolean moveAndDeleteOperation(JSONObject changeList) throws IOException, JSONException {
         JSONArray filesToDelete = (JSONArray) changeList.get("deleted_files");
         JSONArray filesToMove = (JSONArray) changeList.get("moved_files");
 
@@ -186,12 +188,17 @@ public class Worker {
         FileOperation fileOperation = new FileOperation();
 
 //        preform delete operation
-//        TODO create new folder with timestamp and add all deletion into it
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        String currentTimestamp = String.valueOf(timestamp).replace(":", ".");
+        Set<String> fileSet = new HashSet<>();
+
         for (int i = 0; i < filesToDelete.length(); i++) {
             JSONObject file = (JSONObject) filesToDelete.get(i);
+//            add to fileSet
+            fileSet.add(FileOperation.getPathWithoutFile(fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString())));
 //            generate paths
             String sourcePath = fileOperation.filePathUpdateToBackupPath(file.get("file_path").toString());
-            String destinationPath = fileOperation.filePathUpdateToTrashPath(sourcePath);
+            String destinationPath = fileOperation.filePathUpdateToTrashPath(sourcePath, currentTimestamp);
 //            create directory structure
             new File(destinationPath).getParentFile().mkdirs();
 //            perform move to trash
@@ -203,12 +210,21 @@ public class Worker {
 //        preform move operation
         for (int i = 0; i < filesToMove.length(); i++) {
             JSONObject file = (JSONObject) filesToMove.get(i);
+//            add to fileSet
+            fileSet.add(FileOperation.getPathWithoutFile(fileOperation.filePathUpdateToBackupPath(file.get("old_path").toString())));
+//            preform move operation
             boolean isMoved = fileOperation.moveFile(fileOperation.filePathUpdateToBackupPath(file.get("old_path").toString()), fileOperation.filePathUpdateToBackupPath(file.get("new_path").toString()));
             if (isMoved)
                 movedFiles.add(file);
         }
 
-        System.out.printf("After: %s\nBefore: %s\n\n", deletedFiles, filesToDelete);
-        System.out.printf("After: %s\nBefore: %s", movedFiles, filesToMove);
+//        remove empty directories
+        for (String filePath : fileSet) {
+            new FileOperation().removeEmptyDirectories(filePath);
+        }
+        System.out.println("Empty directory analysis and removal completed.");
+
+        return (deletedFiles.size() == filesToDelete.length() && movedFiles.size() == filesToMove.length());
+
     }
 }

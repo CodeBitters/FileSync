@@ -35,6 +35,7 @@ public class ServerMain extends Thread {
 //           set dataBuffer and start file server to send data
             SocketClient.dataBuffer = fileChanges.toString();
             worker.sendFileFromMaster(fileChanges);
+//            TODO think of a way of terminate the program and sockets
         } catch (SQLException | IOException | JSONException e) {
             e.printStackTrace();
         }

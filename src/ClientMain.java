@@ -1,6 +1,7 @@
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 
 //Backup server side
@@ -37,6 +38,7 @@ public class ClientMain extends Thread {
         ThreadRunSocketServer threadRunSocketServer = new ThreadRunSocketServer();
         threadRunSocketServer.start();
 
+
     }
 
     public void run() {
@@ -46,14 +48,22 @@ public class ClientMain extends Thread {
             if (!serverReading.equals(serverReadingMature)) {
                 serverReadingMature = serverReading;
                 try {
+//                    check permissions to write on the destination
+                    String destinationPath = new Environment().getDestinationPath();
+                    File file = new File(destinationPath);
+                    if (!file.canWrite()) {
+                        System.out.printf("Permission is denied to write on %s.\n", destinationPath);
+                        System.exit(70);
+                    }
+
                     JSONObject jsonObject = new JSONObject(serverReadingMature);
                     Worker worker = new Worker();
                     switch (jsonObject.get("operation_code").toString()) {
                         case "change list":
 //                            analyze change list and check for operations
-                            worker.getFileFromMaster(jsonObject);
+                            boolean isAllFileReceived = worker.getFileFromMaster(jsonObject);
 //                            perform delete and move operation
-                            worker.moveAndDeleteOperation(jsonObject);
+                            boolean isMoveAndDeleteOperationCompleted = worker.moveAndDeleteOperation(jsonObject);
                             break;
                         case "reinstate database":
 //                            save files came from master
