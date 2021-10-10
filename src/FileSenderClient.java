@@ -30,8 +30,6 @@ public class FileSenderClient {
             File file = new File(fileDestination);
             file.getParentFile().mkdirs();
 
-//            file.createNewFile();
-
             FileOutputStream fileOutputStream = new FileOutputStream(fileDestination);
 
             int bytesRead;
@@ -47,7 +45,7 @@ public class FileSenderClient {
 //            write the file
             fileOutputStream.write(dataBuffer, 0, fileSize);
             fileOutputStream.flush();
-            System.out.println("File " + fileDestination + " downloaded (" + Math.round((fileSize / 1024.0) * 100.0) / 100.0 + " KB)");
+            System.out.println("File (" + fileDestination + ") downloaded (" + Math.round((fileSize / 1024.0) * 100.0) / 100.0 + " KB)");
 
             socket.close();
             inputStream.close();

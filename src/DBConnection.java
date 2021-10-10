@@ -12,6 +12,10 @@ public class DBConnection {
         this.connection = null;
     }
 
+    public void closeConnection() throws SQLException {
+        connection.close();
+    }
+
     public void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
